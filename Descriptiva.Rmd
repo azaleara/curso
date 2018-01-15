@@ -1,0 +1,266 @@
+---
+title: "Estadística descriptiva"
+output:
+  html_document:
+    df_print: paged
+---
+
+Las paqueterias "base" de R ya incluyen algunos *dataset* como **cars**. La base de datos se registró en 1920 de varios coches. 
+Vamos a explorar esta base de datos.
+
+```{r}
+cars
+plot(cars)
+```
+
+Distancia = ft
+Speed = mph
+
+Algunas característcas que quisieramos averiguar son:
+- cuántos datos (observaciones) hay
+- cuántas variables hay
+- cómo son esas variables (en términos del tipo de variable i.e. nominal, ordinal, intervalar, razón)
+- cómo se comportan esas variables
+
+```{r}
+dim(cars)
+
+min(cars$speed) 
+min(cars$dist) 
+
+max(cars$speed) 
+max(cars$dist) 
+
+mean(cars$speed)
+mean(cars$dist)
+
+#median()
+#sd()
+```
+
+# Moda
+En ocasiones se busca saber cúal es el dato más frecuente en una variable, i.e. moda. R base no tiene una función para ello, entonces puedes hacer 1) tu propia función o 2) bajar una librería que ya tenga esa función.
+```{r}
+moda <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+sort(cars$speed)
+moda(cars$speed)
+
+table(cars$speed)
+
+hist(cars$speed)
+```
+
+2) La moda con librería 
+```{r}
+library(modeest)
+mfv(cars$speed)
+```
+
+Existen funciones ya hechas para desplegar varios datos descriptivos 
+```{r}
+summary(cars)
+
+library(psych)
+describe(cars)
+describeData(cars,head=4,tail=4) 
+```
+
+* Ejemplo de disttrubución normal 
+- dnorm para obtener las funcion de probabilidad de densidad (PDF)
+- pnorm para la función de la distribución acumulada (CDF) 
+- qnorm para el valor de un percentil particular 
+- rnorm
+
+Altura de una población de mujeres 
+```{r}
+estatura <- seq(50, 85, by = 0.1)
+PD <- dnorm(x = estatura, mean = 65, sd = 2)
+plot(estatura, PD)
+
+CDF <- pnorm(q = estatura, 65, 2)
+plot(estatura, CDF)
+```
+
+Si quieres saber el CDF de un dato en particular 
+```{r}
+pnorm (q = 65, mean = 65, sd = 2)
+```
+
+
+
+- cómo se comportan esas variables 
+* medidas de varianza
+** cuantiles
+```{r}
+range(cars$speed)
+quantile(cars$speed)
+quantile(cars$speed, prob = seq(0, 1, length = 11)) #deciles
+
+IQR(cars$speed)  # rango intercuartil (diferencia entre el 1er y 3er cuartil)
+hist(cars$speed)
+```
+
+* Boxplot 
+Las gráficas de cajas o boxplot son muy utiles para mostrar los datos de manera descriptiva.
+- Q1 y Q3 = rango intercuaril froma la caja
+- la mediana es la medida de tendencia central dentro de la caja
+- bigotes: Q1 - 1.5 * IQR (min)
+- bigotes: Q3 + 1.5 * IQR (max)
+- lo que está más alla del max y min, son outliers 
+
+```{r}
+boxplot(cars$speed)
+boxplot(cars$speed, horizontal = T)
+```
+
+
+Puedes graficar los quantiles (observados) con los teóricos 
+- qqnorm 
+- qqplot
+- qqline
+```{r}
+qqnorm(cars$speed)
+```
+
+```{r}
+qqnorm(cars$speed, 
+	main= "Mi primer qq-plot de Cars_Speed", las=par("las"),  
+	col= "black", lwd = 6, pch = 16)
+
+hist(cars$speed)
+```
+
+Otras medidas de varianza 
+
+* desviación estándar = la raíz cuadrada de los cuadrados de las desviaciones de los valores de la variable respecto a su media.
+
+* varianza = cuadrado de la desviación estándar.
+```{r}
+sd(cars$speed)
+
+var(cars$speed)
+```
+
+
+* Graáficas de distribuciones 
+file:///Users/azaleareyesaguilar/Downloads/v64i04.pdf
+
+Existen muchas librerias, ademas de las de base de R, para hace este tipo de graficos, pero una muy util es "fitdistrplus" porque es más diversa en sus funciones y sofisticada en sus gráficas.
+
+Entonces, bajamos la librería y usamos unos datos sobre Ground_beef_patties que consumen los niños a la edad de los 5 años. Exploramos un pocos los datos.
+```{r}
+library("fitdistrplus")
+
+data("groundbeef", package = "fitdistrplus")
+str(groundbeef)
+```
+
+Y hacemos unas gráficas utiles que describen la distribución de los datos
+```{r}
+plotdist(groundbeef$serving, histo = TRUE, demp = TRUE)
+```
+
+Esta librería cuenta con la funcion "descdist" que muestra algunas descripciones de los datos y una gráfica basado en la curtosis y la asimetría para decidir a qué tipo de distribución presentan nuestros datos.
+- La asimetría es estudiar la deformación horizontal de los valores de la variable respecto al valor central de la media; positiva (a la derecha; media < mediana < moda), negativa (a la izquierda; media < mediana < moda) 
+- La curtosis es estudiar lo puntigauda que es la curva (concentración a la linea central) de los datos: Mesocúrtica (normal), Leptocúrtica (existe una gran concentración) y platicúrtica (existe una menor distribución). 
+
+
+```{r}
+#la asimetría (momento de 3er orden). Hay qye crear la función:
+asimetria=function(x) {
+    m3=mean((x-mean(x))^3)
+    skew=m3/(sd(x)^3)
+    skew}
+  
+asimetria(cars$speed)
+
+#la curtosis, Aquí también hay que crear la función
+kurtosis=function(x) {
+  m4=mean((x-mean(x))^4) 
+  kurt=m4/(sd(x)^4)-3  
+  kurt}
+  
+kurtosis(cars$speed)
+```
+
+
+```{r}
+descdist(groundbeef$serving, boot = 1000)
+```
+
+
+```{r}
+fweibull <- fitdist(groundbeef$serving, "weibull")
+summary(fweibull)
+
+fgamma <- fitdist(groundbeef$serving, "gamma")
+summary(fgamma)
+
+flognormal <- fitdist(groundbeef$serving, "lnorm")
+summary(flognormal)
+
+par(mfrow = c(2, 2))
+plot.legend <- c("Weibull", "lognormal", "gamma")
+denscomp(list(fweibull, flognormal, fgamma), legendtext = plot.legend)
+qqcomp(list(fweibull, flognormal, fgamma), legendtext = plot.legend)
+cdfcomp(list(fweibull, flognormal, fgamma), legendtext = plot.legend)
+ppcomp(list(fweibull, flognormal, fgamma), legendtext = plot.legend)
+```
+
+* Analisis para normalidad
+Para saber si una variable tiene un tipo de distribución, e.g. normal, se puede usar la prueba de Shapiro.
+Vamos a usar otros datos: iris
+```{r}
+shapiro.test(iris$Sepal.Length)
+hist(ris$Sepal.Length)
+
+# Hazlo con Petal.Lenght
+
+qqplot(iris$Sepal.Length, iris$Species)
+qqplot(iris$Sepal.Length, iris$Species)
+
+```
+
+* análisis de dos distribuciones (para una o dos muestras)
+** Kologorov-Smirnov test
+Prueba si dos distribuciones son del mismo tipo. 
+H0 = las distribuiones son iguales 
+H1 = las distribuciones NO son iguales 
+
+El test de Kolmogorov-Smirnov es bastante potente con muestras grandes.
+
+```{r}
+ks.test(mtcars$mpg, mtcars$vs)
+
+# realiza las gráficas que consideres muestran los resultados obtenidos
+```
+
+
+* Análisis de varianza
+Si tienes dos o más variables y te gustaría saber si tienen la misma varianza o son diferentes, puedes utilizar varias pruebas para saber si aceptas o rechazas a la HO = todas las varianzas son iguales.
+- Prueba de Bartlett
+- Prueba de Levene
+- Prueba de Hartley
+- Prueba de Chochran
+- Prueba de Layard
+
+var.test hace un análisis de comparación de dos muestras de acuerdo a un modelo lineal
+```{r}
+library(e1071)
+
+var.test(iris$Sepal.Length, iris$Petal.Length)
+
+#para más de dos grupos
+bartlett.test(iris$Sepal.Length ~ iris$Species)
+
+#para dos muestras
+library(car)
+leveneTest(iris$Sepal.Length ~ iris$Species)
+
+# Favor de hacer las gráficas que ilustran sus resultados
+```
+
